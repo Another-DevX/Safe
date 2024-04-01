@@ -4,11 +4,18 @@ import {ISafe} from "../interfaces/ISafe.sol";
 import {Enum} from "../libraries/Enum.sol";
 
 contract SuperChainSmartAccounModule {
+    event OwnerPopulated(address indexed safe, address indexed newOwner);
+    event OwnerAdded(address indexed safe, address indexed newOwner);
+
     mapping(address => mapping(address => bool))
         private _isPopulatedAddOwnerWithThreshold;
     mapping(address => address) public superChainSmartAccount;
 
-    function addOwnerWithThreshold(address _safe, address _newOwner) public {
+    function addOwnerWithThreshold(
+        address _safe,
+        address _newOwner,
+        bytes calldata signature
+    ) public {
         require(
             superChainSmartAccount[_newOwner] == address(0),
             "Owner already has a SuperChainSmartAccount"
@@ -30,6 +37,7 @@ contract SuperChainSmartAccounModule {
         );
 
         require(success, "Failed to add owner");
+        emit OwnerAdded(_safe, _newOwner);
     }
     function populateAddOwner(address _safe, address _newOwner) public {
         require(ISafe(_safe).isOwner(_newOwner), "Owner already exists");
@@ -42,5 +50,6 @@ contract SuperChainSmartAccounModule {
             "Owner already has a SuperChainSmartAccount"
         );
         _isPopulatedAddOwnerWithThreshold[_newOwner][_safe] = true;
+        emit OwnerPopulated(_safe, _newOwner);
     }
 }
