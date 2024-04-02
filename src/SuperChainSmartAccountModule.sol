@@ -12,8 +12,9 @@ contract SuperChainSmartAccountModule is EIP712 {
     event OwnerAdded(address indexed safe, address indexed newOwner);
 
     mapping(address => mapping(address => bool))
-        public _isPopulatedAddOwnerWithThreshold;
+        private _isPopulatedAddOwnerWithThreshold;
     mapping(address => address) public superChainSmartAccount;
+    mapping(address => bool) public hasFirstOwnerYet;
 
     struct AddOwnerRequest {
         address superChainAccount;
@@ -26,7 +27,7 @@ contract SuperChainSmartAccountModule is EIP712 {
         address _safe,
         address _newOwner,
         bytes calldata signature
-    ) public {
+    ) public firstOwnerSet(_safe) {
         require(
             _verifySignature(_safe, _newOwner, signature),
             "Signature verification failed"
@@ -55,7 +56,27 @@ contract SuperChainSmartAccountModule is EIP712 {
         superChainSmartAccount[_newOwner] = _safe;
         emit OwnerAdded(_safe, _newOwner);
     }
-    function populateAddOwner(address _safe, address _newOwner) public {
+
+    function setInitialOwner(address _safe, address _owner) public {
+        require(
+            superChainSmartAccount[_owner] == address(0),
+            "Owner already has a SuperChainSmartAccount"
+        );
+        require(ISafe(_safe).isOwner(_owner), "The address is not an owner");
+        require(msg.sender == _safe, "Caller is not the Safe");
+        require(!hasFirstOwnerYet[_safe], "Safe already has owners");
+        require(
+            ISafe(_safe).getOwners().length == 1,
+            "Safe already has owners"
+        );
+        superChainSmartAccount[_owner] = _safe;
+        hasFirstOwnerYet[_safe] = true;
+    }
+
+    function populateAddOwner(
+        address _safe,
+        address _newOwner
+    ) public firstOwnerSet(_safe) {
         require(msg.sender == _safe, "Caller is not the Safe");
         require(!ISafe(_safe).isOwner(_newOwner), "Owner already exists");
         require(
@@ -74,7 +95,7 @@ contract SuperChainSmartAccountModule is EIP712 {
         address _safe,
         address _newOwner,
         bytes calldata signature
-    ) public view returns (bool) {
+    ) private view returns (bool) {
         AddOwnerRequest memory request = AddOwnerRequest({
             superChainAccount: _safe,
             newOwner: _newOwner
@@ -99,5 +120,10 @@ contract SuperChainSmartAccountModule is EIP712 {
         } else {
             return false;
         }
+    }
+
+    modifier firstOwnerSet(address _safe) {
+        require(hasFirstOwnerYet[_safe], "Initial owner not set yet");
+        _;
     }
 }
