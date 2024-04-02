@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 import {Script, console} from "forge-std/Script.sol";
 import {Guard} from "../src/Guard.sol";
-import {SuperChainSmartAccounModule} from "../src/SuperChainSmartAccounModule.sol";
+import {SuperChainSmartAccountModule} from "../src/SuperChainSmartAccountModule.sol";
 
 contract Deploy is Script {
     function setUp() public {}
@@ -11,11 +11,11 @@ contract Deploy is Script {
     function run() public {
         vm.startBroadcast();
         Guard guard = new Guard();
-        SuperChainSmartAccounModule module = new SuperChainSmartAccounModule();
-        
-         console.logString(
+        SuperChainSmartAccountModule module = new SuperChainSmartAccountModule();
+
+        console.logString(
             string.concat(
-                "SuperChainSmartAccounModule deployed at: ",
+                "SuperChainSmartAccountModule deployed at: ",
                 vm.toString(address(module)),
                 "\n",
                 "Guard deployed at: ",
